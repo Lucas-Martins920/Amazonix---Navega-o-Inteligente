@@ -1,14 +1,37 @@
 [
   {
-    "name": "Banco de Areia Central",
-    "latitude": -0.6785,
-    "longitude": -58.0359,
-    "type": "sandbank"
+    "id": 1,
+    "title": "Banco de Areia Central",
+    "description": "Formação de banco de areia extenso que dificulta a passagem de embarcações de médio porte.",
+    "type": "Banco de Areia",
+    "riskLevel": "Atenção"
   },
   {
-    "name": "Pedral Perigoso",
-    "latitude": -0.7243,
-    "longitude": -57.9562,
-    "type": "danger"
+    "id": 2,
+    "title": "Pedral Perigoso",
+    "description": "Área com pedras submersas, risco alto de colisão e avaria no casco.",
+    "type": "Pedral",
+    "riskLevel": "Alto Risco"
+  },
+  {
+    "id": 3,
+    "title": "Tronco Submerso Próximo à Margem",
+    "description": "Risco de colisão com tronco flutuante ou semi-submerso.",
+    "type": "Obstáculo",
+    "riskLevel": "Atenção"
+  },
+  {
+    "id": 4,
+    "title": "Área de Forte Correnteza",
+    "description": "Correnteza forte que exige atenção redobrada na navegação.",
+    "type": "Condição Fluvial",
+    "riskLevel": "Atenção"
+  },
+  {
+    "id": 5,
+    "title": "Redemoinho Sazonal",
+    "description": "Formação de redemoinhos em períodos de cheia, risco para pequenas embarcações.",
+    "type": "Condição Fluvial",
+    "riskLevel": "Atenção"
   }
 ]

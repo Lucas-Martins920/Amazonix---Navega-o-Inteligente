@@ -1,3 +1,48 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* TORNAR O MAPA ESCURO (HACK TÁTICO) */
+.leaflet-container {
+  height: 100% !important;
+  width: 100% !important;
+  background: #050505 !important;
+  /* Inverte as cores do mapa e ajusta o tom para azul tático */
+  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+}
+
+/* Ajuste para as imagens (Markers) não ficarem invertidas também */
+.leaflet-marker-icon, 
+.leaflet-marker-shadow, 
+.leaflet-tile-pane {
+  /* Se os ícones ficarem estranhos, podemos ajustar aqui */
+}
+
+/* Estilização dos Popups do Mapa */
+.leaflet-popup-content-wrapper {
+  background: #000 !important;
+  color: #22d3ee !important; /* Ciano */
+  border: 1px solid #164e63;
+  border-radius: 0px !important;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+}
+
+.leaflet-popup-tip {
+  background: #164e63 !important;
+}
+
+/* Scrollbars finas e escuras */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: #000;
+}
+::-webkit-scrollbar-thumb {
+  background: #164e63;
+}

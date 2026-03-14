@@ -1,100 +1,71 @@
 import { useEffect, useState } from 'react';
-import { MapContainer, Marker, Popup, GeoJSON } from 'react-leaflet'; // Removido o TileLayer daqui
+import { MapContainer, Marker, Popup, GeoJSON } from 'react-leaflet';
 import { Icon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-interface Risk {
-  name: string;
-  latitude: number;
-  longitude: number;
-  type: string;
-}
+interface MapPageProps { onNavigate: (tab: string) => void; }
 
-export default function MapPage() {
-  // 1. CORREÇÃO: Centralizado EXATAMENTE onde estão os seus pontos de risco (Manaus)
-  const [userLocation] = useState<[number, number]>([-3.1190, -60.0217]); 
-  const [risks, setRisks] = useState<Risk[]>([]);
-  const [riverData, setRiverData] = useState<any>(null);
+export default function MapPage({ onNavigate }: MapPageProps) {
+  const [center] = useState<[number, number]>([-3.1190, -60.0217]); 
+  const [risks, setRisks] = useState([]);
+  const [riverData, setRiverData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/data/risks.json').then(res => res.json()).then(setRisks).catch(() => {});
-    fetch('/data/rio-amazonas.json').then(res => res.json()).then(setRiverData).catch(() => {});
+    async function loadData() {
+      try {
+        const [resRisks, resRio] = await Promise.all([
+          fetch('/risks.json').then(r => r.json()).catch(() => []),
+          fetch('/rio-amazonas.json').then(r => r.json()).catch(() => null)
+        ]);
+        setRisks(resRisks);
+        setRiverData(resRio);
+      } finally {
+        setTimeout(() => setLoading(false), 800);
+      }
+    }
+    loadData();
   }, []);
 
-  // ÍCONES COM BRILHO (NEON) PARA DESTAQUE TOTAL
-  const riskIcon = (type: string) => new Icon({
-    iconUrl: `data:image/svg+xml;base64,${btoa(`
-      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
-        <defs>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
-            <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>
-        </defs>
-        <circle cx="20" cy="20" r="12" fill="${type === 'sandbank' ? '#FACC15' : '#FF0000'}" filter="url(#glow)" stroke="white" stroke-width="2"/>
-        <text x="20" y="24" font-size="12" text-anchor="middle" fill="black" font-weight="bold">!</text>
-      </svg>`)}`,
-    iconSize: [40, 40],
-    iconAnchor: [20, 20]
-  });
-
   return (
-    <div className="h-screen flex flex-col bg-[#050505]">
-      {/* HEADER MINIMALISTA */}
-      <div className="p-4 bg-black border-b border-cyan-900 flex justify-between items-center z-[1000]">
-        <h1 className="text-cyan-500 font-black tracking-widest text-xl">AMAZONIX <span className="text-[10px] text-gray-500 font-mono">V1.0</span></h1>
-        <div className="text-right text-[10px] font-mono text-cyan-700">MODO TÁTICO</div>
-      </div>
-
-      <div className="flex-1 relative overflow-hidden bg-[#050505]">
-        {/* 2. CORREÇÃO: Removido o filtro de inverter cores e o TileLayer */}
-        <MapContainer 
-          center={userLocation} 
-          zoom={13} 
-          style={{ height: '100%', width: '100%', background: '#050505' }}
-        >
-          {/* O TILELAYER FOI DELETADO. NENHUMA RUA OU TERRA SERÁ DESENHADA. */}
-          
-          {/* O RIO (DESTAQUE AZUL CIANO) */}
-          {riverData && (
-            <GeoJSON 
-              data={riverData} 
-              style={{ 
-                color: '#00FFFF', 
-                weight: 6, 
-                opacity: 0.8, 
-                fillColor: '#008888', 
-                fillOpacity: 0.2
-              }} 
-            />
-          )}
-
-          {/* OS PONTOS (DESTAQUE VERMELHO/AMARELO) */}
-          {risks.map((risk, i) => (
-            <Marker key={i} position={[risk.latitude, risk.longitude]} icon={riskIcon(risk.type)}>
-              <Popup>
-                <div className="text-black font-bold uppercase">{risk.name}</div>
-              </Popup>
-            </Marker>
-          ))}
-
-          {/* MARCADOR DO BARCO (Para você saber onde está o centro) */}
-          <Marker position={userLocation} icon={new Icon({
-            iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iNiIgZmlsbD0iIzAwRkZGRiIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyIi8+PC9zdmc+',
-            iconSize: [20, 20]
-          })} />
-        </MapContainer>
-
-        {/* OVERLAY DE ALERTA */}
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-black/80 border border-cyan-800 px-4 py-1 rounded-full">
-           <span className="text-cyan-500 text-[10px] font-black tracking-widest">SISTEMA ATIVO</span>
+    <div className="w-full h-full relative">
+      {loading && (
+        <div className="absolute inset-0 z-[5000] bg-black flex items-center justify-center text-cyan-500 font-mono text-[10px] uppercase tracking-[0.4em]">
+          Carregando Camadas Táticas...
         </div>
+      )}
 
-        {/* BOTÃO SOS GIGANTE */}
-        <button className="absolute bottom-8 right-8 z-[1000] bg-red-600 text-white w-20 h-20 rounded-full border-[4px] border-white shadow-[0_0_30px_rgba(255,0,0,0.4)] font-black text-xl active:scale-90 transition-all">
-          SOS
-        </button>
+      <MapContainer center={center} zoom={13} zoomControl={false} className="w-full h-full">
+        {riverData && <GeoJSON data={riverData} style={{ color: '#22d3ee', weight: 3, opacity: 0.5, fillColor: '#0891b2', fillOpacity: 0.15 }} />}
+        
+        {risks.map((risk: any, i: number) => (
+          <Marker key={i} position={[risk.latitude, risk.longitude]} icon={new Icon({
+            iconUrl: `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30"><circle cx="15" cy="15" r="8" fill="${risk.type === 'sandbank' ? '#FACC15' : '#FF4444'}" stroke="white" stroke-width="2"/></svg>`)}`,
+            iconSize: [24, 24]
+          })}>
+            <Popup><div className="font-bold text-red-600">{risk.name}</div></Popup>
+          </Marker>
+        ))}
+
+        <Marker position={center} icon={new Icon({
+          iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iOCIgZmlsbD0iIzIyZDNlZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyIi8+PC9zdmc+',
+          iconSize: [20, 20]
+        })} />
+      </MapContainer>
+
+      {/* UI Flutuante sobre o mapa */}
+      <div className="absolute top-4 left-4 z-[1000] pointer-events-none">
+        <div className="bg-black/80 border border-cyan-500/20 p-2 rounded backdrop-blur-md">
+          <p className="text-cyan-500 text-[8px] font-bold uppercase tracking-widest">Setor: Porto de Manaus</p>
+        </div>
       </div>
+
+      <button 
+        onClick={() => onNavigate('sos')}
+        className="absolute bottom-6 right-6 z-[1000] bg-red-600 text-white w-14 h-14 rounded-full border-4 border-white shadow-2xl active:scale-90 transition-all font-black text-xs"
+      >
+        SOS
+      </button>
     </div>
   );
 }
