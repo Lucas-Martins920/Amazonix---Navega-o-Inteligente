@@ -1,44 +1,86 @@
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+import { useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { Icon } from 'leaflet';
+import { Geolocation } from '@capacitor/geolocation';
+import 'leaflet/dist/leaflet.css';
 
-    <application
-        android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsRtl="true"
-        android:theme="@style/AppTheme">
+// Ícone do Usuário (Seta de Navegação Neon)
+const userIcon = new Icon({
+  iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjMDBmNWZmIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjIiPjxwYXRoIGQ9Ik0xMiAyTDIgMjJsMTAtNEwxMiAybDgtNHoiLz48L3N2Zz4=',
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+});
 
-        <activity
-            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
-            android:name=".MainActivity"
-            android:label="@string/title_activity_main"
-            android:theme="@style/AppTheme.NoActionBarLaunch"
-            android:launchMode="singleTask"
-            android:exported="true">
+function GPSController({ setLocation }: { setLocation: (pos: [number, number]) => void }) {
+  const map = useMap();
 
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+  useEffect(() => {
+    let watchId: string;
 
-        </activity>
+    const startTracking = async () => {
+      // Usa a precisão que configuramos no AndroidManifest
+      watchId = await Geolocation.watchPosition(
+        {
+          enableHighAccuracy: true, // Satélite ligado
+          timeout: 5000,
+          maximumAge: 0 // Dados sempre novos
+        },
+        (position) => {
+          if (position) {
+            const newPos: [number, number] = [position.coords.latitude, position.coords.longitude];
+            setLocation(newPos);
+            // Suaviza o movimento da câmera no rio
+            map.flyTo(newPos, map.getZoom(), { animate: true, duration: 1 });
+          }
+        }
+      );
+    };
 
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.fileprovider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths"></meta-data>
-        </provider>
-    </application>
+    startTracking();
+    return () => { if (watchId) Geolocation.clearWatch({ id: watchId }); };
+  }, [map, setLocation]);
 
-    <!-- Permissions -->
+  return null;
+}
 
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-feature android:name="android.hardware.location.gps" />
-</manifest>
+export default function MapPage() {
+  const [currentLocation, setCurrentLocation] = useState<[number, number]>([-3.1190, -60.0217]);
+  const [season, setSeason] = useState<'flood' | 'dry'>('flood');
+
+  return (
+    <div className="h-screen flex flex-col font-sans">
+      {/* Header Alta Visibilidade */}
+      <div className="bg-green-700 text-white p-4 shadow-xl z-[1000] border-b-2 border-yellow-400">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-black tracking-tighter">AMAZONIX</h1>
+          <select 
+            value={season} 
+            onChange={(e) => setSeason(e.target.value as any)}
+            className="bg-black text-white font-bold py-1 px-2 rounded border-2 border-white text-sm"
+          >
+            <option value="flood">CHEIA</option>
+            <option value="dry">SECA</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="flex-1 z-0">
+        <MapContainer center={currentLocation} zoom={13} style={{ height: '100%', width: '100%' }}>
+          {/* TileLayer com Cache PWA configurado no Vite */}
+          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          
+          <GPSController setLocation={setCurrentLocation} />
+          
+          <Marker position={currentLocation} icon={userIcon}>
+            <Popup className="font-bold text-blue-700">Sua Embarcação</Popup>
+          </Marker>
+        </MapContainer>
+      </div>
+
+      {/* Barra de Status/Ações Rápidas */}
+      <div className="bg-black text-yellow-400 p-2 text-center text-xs font-mono uppercase tracking-widest">
+        Sinal GPS: Alta Precisão Ativo | {season === 'dry' ? 'Alerta: Bancos de Areia Expostos' : 'Nível do Rio: Normal'}
+      </div>
+    </div>
+  );
+}

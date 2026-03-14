@@ -1,72 +1,14 @@
 [
   {
-    "name": "Banco de Areia Tarumã",
-    "latitude": -3.0305,
-    "longitude": -60.2331,
-    "type": "sandbank",
-    "risk_level": "medium"
+    "name": "Banco de Areia Central",
+    "latitude": -0.6785,
+    "longitude": -58.0359,
+    "type": "sandbank"
   },
   {
-    "name": "Curva Perigosa Rio Negro",
-    "latitude": -3.0101,
-    "longitude": -60.1204,
-    "type": "dangerous_curve",
-    "risk_level": "high"
-  },
-  {
-    "name": "Trecho Raso Ponta Negra",
-    "latitude": -3.0822,
-    "longitude": -60.1033,
-    "type": "shallow_water",
-    "risk_level": "medium"
-  },
-  {
-    "name": "Zona de Navegação Lenta",
-    "latitude": -3.0655,
-    "longitude": -60.2101,
-    "type": "slow_navigation",
-    "risk_level": "low"
-  },
-  {
-    "name": "Banco de Areia Encontro das Águas",
-    "latitude": -3.1405,
-    "longitude": -59.8751,
-    "type": "sandbank",
-    "risk_level": "medium"
-  },
-  {
-    "name": "Curva Perigosa Rio Solimões",
-    "latitude": -3.1702,
-    "longitude": -59.8902,
-    "type": "dangerous_curve",
-    "risk_level": "high"
-  },
-  {
-    "name": "Trecho Raso Lago Janauari",
-    "latitude": -3.1344,
-    "longitude": -60.0205,
-    "type": "shallow_water",
-    "risk_level": "medium"
-  },
-  {
-    "name": "Área Navegação Lenta Comunidade",
-    "latitude": -3.1022,
-    "longitude": -60.0505,
-    "type": "slow_navigation",
-    "risk_level": "low"
-  },
-  {
-    "name": "Comunidade Ribeirinha Catalão",
-    "latitude": -3.1501,
-    "longitude": -59.9102,
-    "type": "community",
-    "risk_level": "none"
-  },
-  {
-    "name": "Comunidade Ribeirinha Janauari",
-    "latitude": -3.1305,
-    "longitude": -60.0054,
-    "type": "community",
-    "risk_level": "none"
+    "name": "Pedral Perigoso",
+    "latitude": -0.7243,
+    "longitude": -57.9562,
+    "type": "danger"
   }
 ]

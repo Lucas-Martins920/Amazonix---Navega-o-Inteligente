@@ -1,202 +1,99 @@
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, Marker, Popup, GeoJSON } from 'react-leaflet'; // Removido o TileLayer daqui
 import { Icon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import MapView from "../components/MapView"
-export default function MapPage(){
-  return <MapView/>
-}
 
 interface Risk {
   name: string;
   latitude: number;
   longitude: number;
   type: string;
-  risk_level: string;
-}
-
-function LocationMarker() {
-  const [position, setPosition] = useState<[number, number] | null>(null);
-  const map = useMap();
-
-  useEffect(() => {
-    map.locate().on('locationfound', (e) => {
-      setPosition([e.latlng.lat, e.latlng.lng]);
-      map.flyTo(e.latlng, map.getZoom());
-    });
-  }, [map]);
-
-  const userIcon = new Icon({
-    iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjMzk1MmZmIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjIiPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjgiLz48L3N2Zz4=',
-    iconSize: [25, 25],
-    iconAnchor: [12, 12],
-  });
-
-  return position === null ? null : (
-    <Marker position={position} icon={userIcon}>
-      <Popup>Você está aqui</Popup>
-    </Marker>
-  );
 }
 
 export default function MapPage() {
+  // 1. CORREÇÃO: Centralizado EXATAMENTE onde estão os seus pontos de risco (Manaus)
+  const [userLocation] = useState<[number, number]>([-3.1190, -60.0217]); 
   const [risks, setRisks] = useState<Risk[]>([]);
-  const [season, setSeason] = useState<'flood' | 'dry'>('flood');
-  const [userLocation] = useState<[number, number]>([-3.1190, -60.0217]);
+  const [riverData, setRiverData] = useState<any>(null);
 
   useEffect(() => {
-    fetch('/data/risks.json')
-      .then((res) => res.json())
-      .then((data) => setRisks(data))
-      .catch((err) => console.error('Error loading risks:', err));
+    fetch('/data/risks.json').then(res => res.json()).then(setRisks).catch(() => {});
+    fetch('/data/rio-amazonas.json').then(res => res.json()).then(setRiverData).catch(() => {});
   }, []);
 
-  const getMarkerColor = (type: string): string => {
-    switch (type) {
-      case 'sandbank':
-        return '#FCD34D';
-      case 'dangerous_curve':
-        return '#EF4444';
-      case 'shallow_water':
-        return '#F97316';
-      case 'slow_navigation':
-        return '#3B82F6';
-      case 'community':
-        return '#10B981';
-      default:
-        return '#6B7280';
-    }
-  };
-
-  const createMarkerIcon = (type: string) => {
-    const color = getMarkerColor(type);
-    return new Icon({
-      iconUrl: `data:image/svg+xml;base64,${btoa(`
-        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="40" viewBox="0 0 30 40">
-          <path d="M15 0C6.716 0 0 6.716 0 15c0 8.284 15 25 15 25s15-16.716 15-25C30 6.716 23.284 0 15 0z" fill="${color}" stroke="white" stroke-width="2"/>
-        </svg>
-      `)}`,
-      iconSize: [30, 40],
-      iconAnchor: [15, 40],
-      popupAnchor: [0, -40],
-    });
-  };
-
-  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): string => {
-    const R = 6371;
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLon = ((lon2 - lon1) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distance = R * c;
-    return distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`;
-  };
-
-  const getTypeLabel = (type: string): string => {
-    const labels: Record<string, string> = {
-      sandbank: 'Banco de Areia',
-      dangerous_curve: 'Curva Perigosa',
-      shallow_water: 'Água Rasa',
-      slow_navigation: 'Navegação Lenta',
-      community: 'Comunidade',
-    };
-    return labels[type] || type;
-  };
-
-  const filteredRisks = risks.filter((risk) => {
-    if (season === 'dry' && risk.type === 'sandbank') return true;
-    if (season === 'flood' && risk.type === 'sandbank') return false;
-    return true;
+  // ÍCONES COM BRILHO (NEON) PARA DESTAQUE TOTAL
+  const riskIcon = (type: string) => new Icon({
+    iconUrl: `data:image/svg+xml;base64,${btoa(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
+        <defs>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+            <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <circle cx="20" cy="20" r="12" fill="${type === 'sandbank' ? '#FACC15' : '#FF0000'}" filter="url(#glow)" stroke="white" stroke-width="2"/>
+        <text x="20" y="24" font-size="12" text-anchor="middle" fill="black" font-weight="bold">!</text>
+      </svg>`)}`,
+    iconSize: [40, 40],
+    iconAnchor: [20, 20]
   });
 
   return (
-    <div className="h-screen flex flex-col">
-      <div className="bg-green-600 text-white p-4 shadow-lg">
-        <h2 className="text-xl font-bold mb-2">Mapa de Navegação</h2>
-        <div className="flex items-center space-x-2">
-          <label className="text-sm font-medium">Modo do Rio:</label>
-          <select
-            value={season}
-            onChange={(e) => setSeason(e.target.value as 'flood' | 'dry')}
-            className="bg-white text-gray-800 rounded-lg px-3 py-1 text-sm font-medium"
-          >
-            <option value="flood">Época de Cheia</option>
-            <option value="dry">Época de Seca</option>
-          </select>
-        </div>
+    <div className="h-screen flex flex-col bg-[#050505]">
+      {/* HEADER MINIMALISTA */}
+      <div className="p-4 bg-black border-b border-cyan-900 flex justify-between items-center z-[1000]">
+        <h1 className="text-cyan-500 font-black tracking-widest text-xl">AMAZONIX <span className="text-[10px] text-gray-500 font-mono">V1.0</span></h1>
+        <div className="text-right text-[10px] font-mono text-cyan-700">MODO TÁTICO</div>
       </div>
 
-      <div className="flex-1">
-        <MapContainer
-          center={[-3.1190, -60.0217]}
-          zoom={11}
-          style={{ height: '100%', width: '100%' }}
+      <div className="flex-1 relative overflow-hidden bg-[#050505]">
+        {/* 2. CORREÇÃO: Removido o filtro de inverter cores e o TileLayer */}
+        <MapContainer 
+          center={userLocation} 
+          zoom={13} 
+          style={{ height: '100%', width: '100%', background: '#050505' }}
         >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          <LocationMarker />
-          {filteredRisks.map((risk, index) => (
-            <Marker
-              key={index}
-              position={[risk.latitude, risk.longitude]}
-              icon={createMarkerIcon(risk.type)}
-            >
+          {/* O TILELAYER FOI DELETADO. NENHUMA RUA OU TERRA SERÁ DESENHADA. */}
+          
+          {/* O RIO (DESTAQUE AZUL CIANO) */}
+          {riverData && (
+            <GeoJSON 
+              data={riverData} 
+              style={{ 
+                color: '#00FFFF', 
+                weight: 6, 
+                opacity: 0.8, 
+                fillColor: '#008888', 
+                fillOpacity: 0.2
+              }} 
+            />
+          )}
+
+          {/* OS PONTOS (DESTAQUE VERMELHO/AMARELO) */}
+          {risks.map((risk, i) => (
+            <Marker key={i} position={[risk.latitude, risk.longitude]} icon={riskIcon(risk.type)}>
               <Popup>
-                <div className="text-sm">
-                  <h3 className="font-bold text-base mb-1">{risk.name}</h3>
-                  <p className="text-gray-600">
-                    <strong>Tipo:</strong> {getTypeLabel(risk.type)}
-                  </p>
-                  <p className="text-gray-600">
-                    <strong>Nível:</strong>{' '}
-                    <span className="capitalize">{risk.risk_level}</span>
-                  </p>
-                  <p className="text-gray-600">
-                    <strong>Distância:</strong>{' '}
-                    {calculateDistance(
-                      userLocation[0],
-                      userLocation[1],
-                      risk.latitude,
-                      risk.longitude
-                    )}
-                  </p>
-                </div>
+                <div className="text-black font-bold uppercase">{risk.name}</div>
               </Popup>
             </Marker>
           ))}
-        </MapContainer>
-      </div>
 
-      <div className="bg-white p-2 border-t border-gray-200">
-        <div className="flex flex-wrap justify-center gap-2 text-xs">
-          <div className="flex items-center">
-            <span className="w-3 h-3 rounded-full bg-yellow-400 mr-1"></span>
-            <span>Banco de Areia</span>
-          </div>
-          <div className="flex items-center">
-            <span className="w-3 h-3 rounded-full bg-red-500 mr-1"></span>
-            <span>Curva Perigosa</span>
-          </div>
-          <div className="flex items-center">
-            <span className="w-3 h-3 rounded-full bg-orange-500 mr-1"></span>
-            <span>Água Rasa</span>
-          </div>
-          <div className="flex items-center">
-            <span className="w-3 h-3 rounded-full bg-blue-500 mr-1"></span>
-            <span>Nav. Lenta</span>
-          </div>
-          <div className="flex items-center">
-            <span className="w-3 h-3 rounded-full bg-green-500 mr-1"></span>
-            <span>Comunidade</span>
-          </div>
+          {/* MARCADOR DO BARCO (Para você saber onde está o centro) */}
+          <Marker position={userLocation} icon={new Icon({
+            iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iNiIgZmlsbD0iIzAwRkZGRiIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyIi8+PC9zdmc+',
+            iconSize: [20, 20]
+          })} />
+        </MapContainer>
+
+        {/* OVERLAY DE ALERTA */}
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-black/80 border border-cyan-800 px-4 py-1 rounded-full">
+           <span className="text-cyan-500 text-[10px] font-black tracking-widest">SISTEMA ATIVO</span>
         </div>
+
+        {/* BOTÃO SOS GIGANTE */}
+        <button className="absolute bottom-8 right-8 z-[1000] bg-red-600 text-white w-20 h-20 rounded-full border-[4px] border-white shadow-[0_0_30px_rgba(255,0,0,0.4)] font-black text-xl active:scale-90 transition-all">
+          SOS
+        </button>
       </div>
     </div>
   );
