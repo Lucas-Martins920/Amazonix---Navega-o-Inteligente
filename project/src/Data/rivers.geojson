@@ -1,0 +1,19 @@
+{
+"type": "FeatureCollection",
+"features": [
+{
+"type": "Feature",
+"properties": {
+"name": "Rio Negro"
+},
+"geometry": {
+"type": "LineString",
+"coordinates": [
+[-60.0217,-3.118],
+[-60.0317,-3.128],
+[-60.0417,-3.138]
+]
+}
+}
+]
+}

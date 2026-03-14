@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { Icon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import MapView from "../components/MapView"
+export default function MapPage(){
+  return <MapView/>
+}
 
 interface Risk {
   name: string;
